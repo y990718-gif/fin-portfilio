@@ -62,13 +62,20 @@ mkdir -p /etc/morning-brief
 cp /opt/morning-brief/.env.example /etc/morning-brief/app.env
 chown root:morning-brief /etc/morning-brief/app.env
 chmod 640 /etc/morning-brief/app.env   # root 와 서비스 사용자만 읽는다. 러너 사용자는 못 읽는다
-nano /etc/morning-brief/app.env
+
+# 비밀값 입력 도우미 설치 (한 번)
+install -m 700 -o root -g root /opt/morning-brief/infra/home-server/morning-brief-env.sh /usr/local/sbin/morning-brief-env
 ```
 
+- **비밀값(`MONGODB_URI`, `OPENAI_API_KEY`, `VAPID_SUBJECT`)은 5단계에서 서비스를 등록한 뒤 `morning-brief-env` 로 넣는다.**
+  입력이 화면에 보이지 않고, 모양을 검사한 뒤 작은따옴표로 감싸 저장하고, 서비스를 재시작해 상태까지 보여 준다. 엔터만 치면 기존 값을 둔다.
+  가원은 Mac 에서 `ssh -t homeserver lxc exec fin-brief -- morning-brief-env` 로도 실행할 수 있다.
+- 그 밖의 값(`MONGODB_DB`, `BRIEF_CRON`, `OPENAI_MODEL` 등)은 `nano /etc/morning-brief/app.env` 로 고친다.
+  공백이나 `&` 가 든 값은 작은따옴표로 감싼다(`BRIEF_CRON='30 7 * * mon-fri'`).
 - `MONGODB_URI` 는 아래 4단계의 **서버 전용 사용자**로 만든다.
 - `MONGODB_DB=morning_brief` (로컬 개발용 `morning_brief_dev` 와 나눈다)
 - `OPENAI_API_KEY` 는 서버 전용 키로 발급하고 OpenAI 프로젝트에 월 사용 한도를 건다.
-- `VAPID_*` 는 5단계에서 만든다. **한 번 정하면 바꾸지 않는다.** 바꾸면 모든 기기가 알림을 다시 켜야 한다.
+- `VAPID_PUBLIC_KEY`·`VAPID_PRIVATE_KEY` 는 5단계에서 만든다. **한 번 정하면 바꾸지 않는다.** 바꾸면 모든 기기가 알림을 다시 켜야 한다.
 - `WEB_DIST` 는 적지 않는다. 서비스 파일이 넣는데, env 파일에 빈 줄로라도 있으면 그 값이 이긴다.
 
 ### 4. MongoDB Atlas
@@ -78,6 +85,7 @@ nano /etc/morning-brief/app.env
 - 서버 전용 사용자를 따로 만든다: Atlas → **Database & Network Access → Database Users →
   Add New Database User** → Password(자동 생성, 길게) → **Specific Privileges** → `readWrite` @ `morning_brief`.
 - 클러스터를 만들 때 생긴 빠른 설정 사용자(Atlas Admin 권한)는 서버에 넣지 않는다.
+- 새 사용자의 연결 문자열은 `morning-brief-env` 로 넣는다.
 
 ### 5. 서비스 등록과 첫 배포
 
@@ -87,10 +95,12 @@ systemctl daemon-reload
 systemctl enable morning-brief-api morning-brief-worker
 bash /opt/morning-brief/infra/home-server/deploy.sh
 
-# 알림 키를 만들어 app.env 에 붙여 넣고 다시 시작
+# 알림 키를 만들어 app.env 에 붙여 넣기
 sudo -u morning-brief /opt/morning-brief/apps/api/.venv/bin/morning-brief vapid-keys
 nano /etc/morning-brief/app.env
-systemctl restart morning-brief-api morning-brief-worker
+
+# 비밀값 입력 → 서비스 재시작 → API·워커 상태 확인까지 한 번에
+morning-brief-env
 ```
 
 ### 6. 자동 배포 러너
