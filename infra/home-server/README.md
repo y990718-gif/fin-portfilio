@@ -59,6 +59,7 @@ sudo -u morning-brief git clone https://github.com/y990718-gif/fin-portfilio.git
 
 ```bash
 mkdir -p /etc/morning-brief
+chown root:morning-brief /etc/morning-brief && chmod 750 /etc/morning-brief   # 러너 사용자는 폴더 안도 못 본다
 cp /opt/morning-brief/.env.example /etc/morning-brief/app.env
 chown root:morning-brief /etc/morning-brief/app.env
 chmod 640 /etc/morning-brief/app.env   # root 와 서비스 사용자만 읽는다. 러너 사용자는 못 읽는다
