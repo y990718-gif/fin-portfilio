@@ -33,6 +33,7 @@ class Settings:
     notion_token: str | None
     notion_database_id: str | None
     # 빌드된 웹(apps/web/dist) 경로. 있으면 API 서버가 웹 화면도 함께 서빙한다.
+    # 서버에서는 systemd 서비스 파일이 넣으므로 env 파일에는 적지 않는다 (infra/home-server).
     web_dist: str | None
 
     @property
