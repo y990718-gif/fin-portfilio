@@ -11,7 +11,8 @@ GPT(OpenAI)로 요약하고, MongoDB에 쌓아 아이폰 홈 화면 앱(PWA)으�
 
 - 저장소: https://github.com/y990718-gif/fin-portfilio (레포 이름의 철자는 `portfilio`가 맞습니다)
 - 구조: 모노레포. `apps/api`(Python·FastAPI) + `apps/web`(React PWA)
-- 실행: 홈서버 워커가 평일 07:30 KST(`BRIEF_CRON`)에 브리핑을 만들고 알림을 보냅니다 (`infra/home-server/`)
+- 실행: 홈서버 LXD 컨테이너 `fin-brief`의 워커가 평일 07:30 KST(`BRIEF_CRON`)에 브리핑을 만들고 알림을 보냅니다
+- 배포: `main`에 머지되면 GitHub Actions가 그 컨테이너에 자동으로 배포합니다 (`infra/home-server/`)
 - 데이터: MongoDB Atlas `morning_brief` DB
 
 ## 사용자와 소통하기
@@ -24,8 +25,8 @@ GPT(OpenAI)로 요약하고, MongoDB에 쌓아 아이폰 홈 화면 앱(PWA)으�
 
 | 누가 | 맡는 일 |
 |---|---|
-| 사용자(김영웅) | 기획, 화면·문구, 뉴스 출처·지표·요약 항목 바꾸기 |
-| 개발 도우미(김가원) | 홈서버·배포(`infra/`), DB 구조, 서버 비밀값, CI |
+| 사용자(김영웅) | 기획, 화면·문구, 뉴스 출처·지표·요약 항목 바꾸기, 서버 컨테이너 운영(배포·로그·env 값) |
+| 개발 도우미(김가원) | 홈서버 호스트·컨테이너·Tailscale, DB 구조, CI·배포 워크플로 |
 
 아래 [먼저 확인받을 것](#먼저-확인받을-것)에 해당하는 변경은 바로 하지 말고, 사용자에게 이유를 설명한 뒤
 가원에게 확인받도록 안내합니다.
@@ -70,7 +71,7 @@ GPT(OpenAI)로 요약하고, MongoDB에 쌓아 아이폰 홈 화면 앱(PWA)으�
 | `apps/web/src/components/BriefingView.tsx` | 브리핑 화면의 카드 구성 |
 | `apps/web/src/pages/` | 오늘 · 지난 브리핑 · 설정 화면 |
 | `apps/web/src/styles.css` | 색·간격. 맨 위 변수만 바꾸면 전체에 반영 |
-| `infra/home-server/` | 서버 설정과 배포 (가원 관리) |
+| `infra/home-server/` | 서버 컨테이너 설치·배포·운영 방법 |
 
 ### 브리핑에 항목을 추가할 때
 
@@ -84,8 +85,9 @@ GPT(OpenAI)로 요약하고, MongoDB에 쌓아 아이폰 홈 화면 앱(PWA)으�
 - MongoDB 컬렉션·필드 **이름 바꾸기와 지우기**. 이미 쌓인 데이터와 앱이 어긋납니다. 필드 추가는 괜찮습니다.
 - `push.py`의 허용 알림 주소 목록과 `store.py`의 기기 수 상한. 서버가 아무 주소로나 요청을 보내지 않게 막는 장치입니다.
 - `infra/`, `.github/workflows/`, `.claude/settings.json`
+- **`deploy.yml`에 `pull_request` 트리거를 넣는 것은 금지**입니다. 공개 레포라 fork PR 코드가 집 서버에서 돌게 됩니다. 외부인 PR의 워크플로 실행 승인 요청도 가원에게 먼저 보여 줍니다.
 - 새 라이브러리 추가. 추가할 때는 `uv add`(apps/api) 또는 `pnpm --filter web add`로 하고 lock 파일을 같이 커밋합니다.
-- GPT 모델(`OPENAI_MODEL`)이나 브리핑 시각(`BRIEF_CRON`) 변경. 서버 env 값이라 가원이 바꿉니다.
+- GPT 모델(`OPENAI_MODEL`)이나 브리핑 시각(`BRIEF_CRON`) 변경. 서버 env 값(`/etc/morning-brief/app.env`)이라 바꾼 뒤 서비스를 다시 시작해야 합니다.
 
 ## 개발 규칙
 
@@ -115,12 +117,12 @@ pnpm check                # 커밋 전에 반드시. CI와 같은 검사(포맷�
 ## 비밀 정보
 
 - API 키·토큰(`OPENAI_API_KEY`, `MONGODB_URI`의 비밀번호, `VAPID_PRIVATE_KEY`, `NOTION_TOKEN`, GitHub 토큰 등)은 절대 코드, 커밋, 문서, Notion에 적지 않습니다.
-- 로컬은 루트 `.env`(커밋되지 않음), 서버는 `/etc/morning-brief/app.env`에만 둡니다. 서버 값은 가원이 관리합니다.
+- 로컬은 루트 `.env`(커밋되지 않음), 서버는 컨테이너의 `/etc/morning-brief/app.env`에만 둡니다.
 - 에이전트는 `.env`를 읽거나 출력하지 않습니다. 값을 넣어야 하면 사용자에게 직접 넣는 방법을 안내합니다.
 
 ## Git
 
-- `main`은 홈서버에 배포되는 기준입니다. 작업은 브랜치(`<type>/<이름>`, 예: `feat/bank-stocks`)에서 하고 PR로 `main`에 합칩니다. `main`에 바로 푸시하지 않습니다.
+- **`main`에 머지되면 곧바로 홈서버에 배포됩니다.** 작업은 브랜치(`<type>/<이름>`, 예: `feat/bank-stocks`)에서 하고, PR의 CI가 초록일 때 `main`에 합칩니다. `main`에 바로 푸시하지 않습니다.
 - 작업 전에 `git pull`로 최신 `main`을 받습니다.
 - 커밋과 푸시는 사용자가 요청했을 때만 합니다.
 - 커밋 메시지는 제목 한 줄 + 불릿입니다. 마지막 불릿은 검증입니다. `Co-Authored-By` 같은 도구 표시는 붙이지 않습니다.
