@@ -6,6 +6,7 @@ import calendar
 import re
 import time
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from html import unescape
 from urllib.parse import quote
 
@@ -38,6 +39,17 @@ class Article:
     title: str
     link: str
     summary: str
+    published_at: datetime | None = None
+
+    def to_doc(self) -> dict:
+        """MongoDB 에 쓰는 형태."""
+        return {
+            "source": self.source,
+            "title": self.title,
+            "link": self.link,
+            "summary": self.summary,
+            "published_at": self.published_at,
+        }
 
 
 def _published_ts(entry) -> float | None:
@@ -67,7 +79,8 @@ def fetch_news() -> list[Article]:
                 continue
             seen_titles.add(title)
             summary = _strip_tags(entry.get("summary", ""))[:300]
-            articles.append(Article(source, title, entry.get("link", ""), summary))
+            published_at = datetime.fromtimestamp(ts, UTC) if ts is not None else None
+            articles.append(Article(source, title, entry.get("link", ""), summary, published_at))
             count += 1
         print(f"[news] {source}: {count}건")
     return articles

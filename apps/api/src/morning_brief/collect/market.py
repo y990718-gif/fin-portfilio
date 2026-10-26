@@ -54,6 +54,20 @@ class Quote:
             f"({arrow}{self.fmt(abs(self.change))}, {self.change_pct:+.2f}%) [{self.date}]"
         )
 
+    def to_doc(self) -> dict:
+        """MongoDB 와 API 응답에 쓰는 형태."""
+        return {
+            "group": self.group,
+            "name": self.name,
+            "ticker": self.ticker,
+            "price": self.price,
+            "prev": self.prev,
+            "change": self.change,
+            "change_pct": self.change_pct,
+            "trade_date": self.date,
+            "digits": self.digits,
+        }
+
 
 def fetch_quotes() -> list[Quote]:
     quotes = []

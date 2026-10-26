@@ -1,4 +1,26 @@
-__pycache__/
-.venv/
+# 비밀값. 예시 파일만 커밋한다.
 .env
+.env.*
+!.env.example
+
+# Node / 웹 빌드
+node_modules/
+apps/web/dist/
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Claude Code — 저장소 공용 하네스(settings.json)만 추적하고 개인 설정은 무시한다
+.claude/*
+!.claude/settings.json
+
+# OS / IDE / 로그
 .DS_Store
+.idea/
+.vscode/
+*.log

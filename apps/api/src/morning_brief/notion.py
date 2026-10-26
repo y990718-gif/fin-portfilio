@@ -1,4 +1,7 @@
-"""브리핑 마크다운을 Notion 데이터베이스에 새 페이지로 저장."""
+"""(선택) 브리핑 마크다운을 Notion 데이터베이스에 새 페이지로 저장.
+
+NOTION_TOKEN·NOTION_DATABASE_ID 가 있을 때만 앱과 함께 Notion 에도 올린다.
+"""
 
 from __future__ import annotations
 
