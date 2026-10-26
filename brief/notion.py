@@ -80,22 +80,28 @@ def markdown_to_blocks(markdown: str) -> list[dict]:
     return blocks
 
 
-def _database_props(database_id: str) -> tuple[str, str | None]:
-    """데이터베이스의 제목 속성 이름과 (있다면) 첫 번째 날짜 속성 이름."""
+TYPE_PROP, TYPE_BRIEFING = "유형", "브리핑"  # 같은 DB의 '작업일지'와 구분
+
+
+def _database_props(database_id: str) -> tuple[str, str | None, bool]:
+    """제목 속성 이름, (있다면) 첫 번째 날짜 속성 이름, '유형' 선택 속성 유무."""
     r = requests.get(f"{API}/databases/{database_id}", headers=_headers(), timeout=30)
     r.raise_for_status()
     props = r.json()["properties"]
     title = next(name for name, p in props.items() if p["type"] == "title")
     date = next((name for name, p in props.items() if p["type"] == "date"), None)
-    return title, date
+    has_type = props.get(TYPE_PROP, {}).get("type") == "select"
+    return title, date, has_type
 
 
 def publish(title: str, date_iso: str, markdown: str) -> str:
     database_id = os.environ["NOTION_DATABASE_ID"]
-    title_prop, date_prop = _database_props(database_id)
+    title_prop, date_prop, has_type = _database_props(database_id)
     properties = {title_prop: {"title": _text(title)}}
     if date_prop:
         properties[date_prop] = {"date": {"start": date_iso}}
+    if has_type:
+        properties[TYPE_PROP] = {"select": {"name": TYPE_BRIEFING}}
 
     blocks = markdown_to_blocks(markdown)
     r = requests.post(
