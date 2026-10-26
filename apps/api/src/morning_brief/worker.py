@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 from .config import KST, get_settings
@@ -26,5 +28,7 @@ def main() -> None:
         _job, trigger, id="morning-brief", coalesce=True, max_instances=1, misfire_grace_time=3600
     )
     get_db()  # 시작할 때 DB 연결과 인덱스를 확인해 설정 오류를 바로 드러낸다
-    print(f"[worker] 예약: '{settings.brief_cron}' (KST). 다음 실행: {scheduler.get_jobs()[0].next_run_time}")
+    # start() 전의 작업에는 next_run_time 이 아직 없으므로 트리거에서 직접 계산한다
+    next_run = trigger.get_next_fire_time(None, datetime.now(KST))
+    print(f"[worker] 예약: '{settings.brief_cron}' (KST). 다음 실행: {next_run}")
     scheduler.start()
