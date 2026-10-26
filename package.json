@@ -1,0 +1,21 @@
+{
+  "name": "fin-portfolio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "아침 경제 브리핑 모노레포 — apps/api(FastAPI·수집·GPT 요약) + apps/web(React PWA)",
+  "scripts": {
+    "dev:api": "uv --directory apps/api run --env-file ../../.env uvicorn morning_brief.api:app --reload --port 8000",
+    "dev:web": "pnpm --filter web dev",
+    "brief:run": "uv --directory apps/api run --env-file ../../.env morning-brief run",
+    "vapid:keys": "uv --directory apps/api run morning-brief vapid-keys",
+    "format": "uv --directory apps/api run ruff format . && pnpm --filter web format",
+    "check": "pnpm check:api && pnpm check:web",
+    "check:api": "uv --directory apps/api run ruff format --check . && uv --directory apps/api run ruff check . && uv --directory apps/api run pytest",
+    "check:web": "pnpm --filter web format:check && pnpm --filter web lint && pnpm --filter web typecheck && pnpm --filter web build",
+    "build:web": "pnpm --filter web build"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@10.30.3"
+}
