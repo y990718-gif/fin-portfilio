@@ -13,8 +13,10 @@ main() {
   # 서비스 사용자도 읽을 수 있는 곳에 uv 가 Python 을 설치하게 한다
   local python_dir=/opt/morning-brief-python
 
+  # COREPACK_ENABLE_DOWNLOAD_PROMPT=0: packageManager 의 pnpm 버전이 바뀌어도 비대화형 배포에서 묻지 않고 받는다
   as_app() {
-    sudo -u "$app_user" -H env UV_PYTHON_INSTALL_DIR="$python_dir" PATH="/usr/local/bin:/usr/bin:/bin" "$@"
+    sudo -u "$app_user" -H env UV_PYTHON_INSTALL_DIR="$python_dir" COREPACK_ENABLE_DOWNLOAD_PROMPT=0 \
+      PATH="/usr/local/bin:/usr/bin:/bin" "$@"
   }
 
   echo "[deploy] main 최신 커밋 받기"
