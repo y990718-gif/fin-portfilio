@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(pnpm check)",
+      "Bash(pnpm check:api)",
+      "Bash(pnpm check:web)",
+      "Bash(pnpm format)",
+      "Bash(pnpm build:web)",
+      "Bash(pnpm --filter web format:check)",
+      "Bash(pnpm --filter web lint)",
+      "Bash(pnpm --filter web typecheck)",
+      "Bash(pnpm --filter web build)",
+      "Bash(uv --directory apps/api run pytest *)",
+      "Bash(uv --directory apps/api run ruff *)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Bash(cat .env)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git push origin main*)"
+    ]
+  },
+  "attribution": {
+    "commit": "",
+    "pr": "",
+    "sessionUrl": false
+  }
+}

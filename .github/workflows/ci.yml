@@ -1,0 +1,73 @@
+name: CI
+
+# PR 과 main 에 들어온 코드를 로컬의 `pnpm check` 와 같은 순서로 검사한다.
+# 브리핑 자동 생성은 GitHub 가 아니라 홈서버의 워커가 한다 (infra/home-server).
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    name: API (ruff · pytest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Install pinned uv
+        run: python -m pip install uv==0.9.26
+
+      - name: Install locked dependencies
+        run: uv sync --locked
+
+      - name: Format check
+        run: uv run ruff format --check .
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Test
+        run: uv run pytest
+
+  web:
+    name: Web (prettier · oxlint · tsc · build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # 버전은 루트 package.json 의 packageManager 를 따른다
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Format check
+        run: pnpm --filter web format:check
+
+      - name: Lint
+        run: pnpm --filter web lint
+
+      - name: Typecheck
+        run: pnpm --filter web typecheck
+
+      - name: Build
+        run: pnpm --filter web build

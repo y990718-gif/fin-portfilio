@@ -1,0 +1,22 @@
+[Unit]
+Description=Morning Brief worker (weekday briefing at BRIEF_CRON)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=morning-brief
+Group=morning-brief
+WorkingDirectory=/opt/morning-brief/apps/api
+EnvironmentFile=/etc/morning-brief/app.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/morning-brief/apps/api/.venv/bin/morning-brief worker
+Restart=on-failure
+RestartSec=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,4 @@
+# 홈서버 LXD 컨테이너(fin-brief)에 등록한 self-hosted runner 라벨
+self-hosted-runner:
+  labels:
+    - fin-brief

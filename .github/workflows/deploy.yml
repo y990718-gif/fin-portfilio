@@ -1,0 +1,26 @@
+name: 배포
+
+# main 에 머지되면 홈서버 LXD 컨테이너(fin-brief)의 self-hosted runner 가 배포한다.
+# ⚠️ pull_request 트리거를 절대 추가하지 않는다. 공개 레포라 fork PR 코드가 서버에서 돌게 된다.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {} # Actions 탭에서 "Run workflow"로 수동 배포
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: 홈서버 배포
+    runs-on: [self-hosted, fin-brief]
+    timeout-minutes: 20
+    steps:
+      # checkout 하지 않는다. deploy.sh 가 서버의 /opt/morning-brief 에서 origin/main 을 직접 받는다.
+      # 러너 사용자에게는 이 래퍼 하나만 NOPASSWD sudo 로 허용돼 있다.
+      - name: deploy.sh 실행
+        run: sudo -n /usr/local/sbin/morning-brief-deploy

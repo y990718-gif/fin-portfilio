@@ -1,0 +1,24 @@
+[Unit]
+Description=Morning Brief API (FastAPI + web)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=morning-brief
+Group=morning-brief
+WorkingDirectory=/opt/morning-brief/apps/api
+EnvironmentFile=/etc/morning-brief/app.env
+Environment=PYTHONUNBUFFERED=1
+Environment=WEB_DIST=/opt/morning-brief/apps/web/dist
+# 외부 공개는 리버스 프록시(HTTPS)가 맡고, 앱은 서버 안에서만 연다
+ExecStart=/opt/morning-brief/apps/api/.venv/bin/uvicorn morning_brief.api:app --host 127.0.0.1 --port 8000 --proxy-headers
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
